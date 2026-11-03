@@ -47,10 +47,13 @@ class AuthController extends Controller
         $request->session()->regenerate();
         Auth::guard('web')->login($utilisateur);
 
+        $token = $utilisateur->createToken('auth_token')->plainTextToken;
+
         $this->notifierRejets($utilisateur);
 
         return response()->json([
             'utilisateur' => $utilisateur->load('service'),
+            'token' => $token,
         ], 201);
     }
 
@@ -88,18 +91,24 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
+        $token = $utilisateur->createToken('auth_token')->plainTextToken;
+
         // Notifie automatiquement le fonctionnaire de ses éventuels dossiers
         // rejetés (in-app + email), même importés après la création du compte.
         $this->notifierRejets($utilisateur);
 
         return response()->json([
             'utilisateur' => $utilisateur->load('service'),
+            'token' => $token,
         ]);
     }
 
     // POST /api/logout
     public function logout(Request $request)
     {
+        if ($request->user()) {
+            $request->user()->currentAccessToken()?->delete();
+        }
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

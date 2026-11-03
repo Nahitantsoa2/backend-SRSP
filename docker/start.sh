@@ -12,10 +12,17 @@ mkdir -p /var/www/storage/framework/cache/data /var/www/storage/framework/sessio
 chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
-# Exécution automatique des migrations si RUN_MIGRATIONS=true
+# Exécution automatique des migrations (activé par défaut si non défini)
+RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
 if [ "$RUN_MIGRATIONS" = "true" ]; then
     echo "==> Exécution des migrations de la base de données..."
     php /var/www/artisan migrate --force || true
+fi
+
+# Exécution automatique des seeders si RUN_SEEDS=true
+if [ "$RUN_SEEDS" = "true" ]; then
+    echo "==> Exécution des seeders de démonstration..."
+    php /var/www/artisan db:seed --force || true
 fi
 
 # Optimisation du cache Laravel en production si APP_KEY est défini

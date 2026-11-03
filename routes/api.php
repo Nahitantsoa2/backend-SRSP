@@ -20,8 +20,8 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
-Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:3,1');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:30,1')->name('login');
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:30,1');
 
 // Public : nécessaire pour peupler le menu déroulant du formulaire d'inscription
 Route::get('/services', [ServiceController::class, 'index']);
