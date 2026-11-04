@@ -3,6 +3,7 @@ set -e
 
 # Configuration du port pour Render ($PORT)
 PORT="${PORT:-10000}"
+export APP_KEY="${APP_KEY:-base64:aYKRvM3bas28yeO65qpEzGcLCI2Q3TbP+ioSvTDRVF0=}"
 echo "==> Configuration de Nginx pour écouter sur le port ${PORT}..."
 sed -i "s/LISTEN_PORT/${PORT}/g" /etc/nginx/sites-available/default
 
