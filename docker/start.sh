@@ -4,14 +4,20 @@ set -e
 # Configuration du port pour Render ($PORT)
 PORT="${PORT:-10000}"
 export APP_KEY="${APP_KEY:-base64:aYKRvM3bas28yeO65qpEzGcLCI2Q3TbP+ioSvTDRVF0=}"
+export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
+export DB_CONNECTION="${DB_CONNECTION:-pgsql}"
+export CACHE_STORE="${CACHE_STORE:-file}"
+export SESSION_DRIVER="${SESSION_DRIVER:-file}"
+
 echo "==> Configuration de Nginx pour écouter sur le port ${PORT}..."
 sed -i "s/LISTEN_PORT/${PORT}/g" /etc/nginx/sites-available/default
 
 # Permissions pour le stockage et le cache Laravel
 echo "==> Configuration des permissions pour storage et bootstrap/cache..."
 mkdir -p /var/www/storage/framework/cache/data /var/www/storage/framework/sessions /var/www/storage/framework/views /var/www/storage/logs /var/www/bootstrap/cache
+touch /var/www/storage/logs/laravel.log
+chmod -R 777 /var/www/storage /var/www/bootstrap/cache
 chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # Exécution automatique des migrations (activé par défaut si non défini)
 RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
@@ -34,6 +40,10 @@ if [ -n "$APP_KEY" ]; then
     php /var/www/artisan route:cache || true
     php /var/www/artisan view:cache || true
 fi
+
+# Réapplication stricte des permissions après les commandes artisan
+chmod -R 777 /var/www/storage /var/www/bootstrap/cache
+chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 echo "==> Lancement de Supervisord (PHP-FPM + Nginx sur 0.0.0.0:${PORT})..."
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
