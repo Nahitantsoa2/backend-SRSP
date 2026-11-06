@@ -14,17 +14,29 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+
+        // Authentification Sanctum
         $middleware->statefulApi();
+
+        // Exclusion CSRF pour les API
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);
+
+        // Middleware de gestion des rôles
         $middleware->alias([
             'role' => CheckRole::class,
         ]);
+
+        // Gestion des utilisateurs non authentifiés
         $middleware->redirectGuestsTo(fn () => null);
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+
+        // Réponses JSON pour les routes API
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+
     })->create();

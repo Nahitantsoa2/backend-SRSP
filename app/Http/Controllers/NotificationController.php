@@ -12,6 +12,7 @@ class NotificationController extends Controller
     {
         return Notification::where('id_utilisateur', $request->user()->id_utilisateur)
             ->orderByDesc('date_envoi')
+            ->limit(50)
             ->get();
     }
 

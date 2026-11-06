@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -24,19 +25,20 @@ class AssistantIaService
 
         try {
             $apiKey = config('services.gemini.key');
-            if (empty($apiKey) || $apiKey === 'votre_cle_gemini_ici') {
+            if ($this->cleApiManquante($apiKey)) {
                 return $this->reponseHorsLigne($question);
             }
 
-            $model = config('services.gemini.model', 'gemini-3-flash');
+            $model = config('services.gemini.model', 'gemini-3.5-flash');
 
             $response = Http::withoutVerifying()
-                ->timeout(20)
-                ->retry(2, 2000, function ($exception, $request) {
-                    // Réessaie automatiquement en cas de 503 (surcharge Gemini)
-                    return $exception instanceof RequestException
-                        && $exception->response?->status() === 503;
-                })
+                ->timeout(45)
+                ->retry(3, 2000, function ($exception, $request) {
+                    // Réessaie en cas de surcharge Gemini (503) ou de problème réseau
+                    return $exception instanceof ConnectionException
+                        || ($exception instanceof RequestException
+                            && $exception->response?->status() === 503);
+                }, throw: false)
                 ->withHeaders([
                     'x-goog-api-key' => $apiKey,
                     'content-type' => 'application/json',
@@ -61,13 +63,57 @@ class AssistantIaService
                     return 'Le service Gemini est actuellement surchargé (forte demande). Veuillez réessayer dans quelques instants.';
                 }
 
-                return "Je suis désolé, je n'ai pas pu vous répondre car mon accès à l'IA a rencontré une erreur (peut-être que la clé API est invalide).\n\n[DEBUG] Statut : ".$response->status()."\n[DEBUG] Détail : ".$response->body();
+                if (in_array($response->status(), [400, 401, 403], true)) {
+                    return "Je suis désolé, je n'ai pas pu vous répondre : la clé API Gemini est invalide ou non autorisée. Vérifiez la variable GEMINI_API_KEY dans le fichier .env.";
+                }
+
+                return "Je suis désolé, je n'ai pas pu vous répondre car mon accès à l'IA a rencontré une erreur.\n\n[DEBUG] Statut : ".$response->status()."\n[DEBUG] Détail : ".$response->body();
             }
 
             return $response->json('candidates.0.content.parts.0.text') ?? "Je n'ai pas pu générer de réponse.";
-        } catch (\Exception $e) {
+        } catch (RequestException $e) {
+            $statut = $e->response?->status();
+
+            Log::error('Erreur API Gemini (exception)', [
+                'statut' => $statut,
+                'message' => $e->getMessage(),
+                'body' => $e->response?->body(),
+            ]);
+
+            if ($statut === 503) {
+                return 'Le service Gemini est actuellement surchargé (forte demande). Veuillez réessayer dans quelques instants.';
+            }
+
+            if (in_array($statut, [400, 401, 403], true)) {
+                return "Je suis désolé, je n'ai pas pu vous répondre : la clé API Gemini est invalide ou non autorisée. Vérifiez la variable GEMINI_API_KEY dans le fichier .env.";
+            }
+
+            return "Désolé, une erreur est survenue lors de la communication avec l'IA. Veuillez réessayer ou contacter votre service.";
+        } catch (\Throwable $e) {
+            Log::error('Erreur de communication avec l\'IA', [
+                'classe' => get_class($e),
+                'message' => $e->getMessage(),
+            ]);
+
             return "Désolé, une erreur est survenue lors de la communication avec l'IA. Veuillez réessayer ou contacter votre service.";
         }
+    }
+
+    private function cleApiManquante(?string $apiKey): bool
+    {
+        if (empty($apiKey)) {
+            return true;
+        }
+
+        $cle = strtolower(trim($apiKey));
+
+        foreach (['votre_cle', 'ta_cle', 'votre-cle', 'change_me', 'a_remplacer', 'xxx'] as $motif) {
+            if (str_contains($cle, $motif)) {
+                return true;
+            }
+        }
+
+        return strlen($cle) < 30;
     }
 
     /**

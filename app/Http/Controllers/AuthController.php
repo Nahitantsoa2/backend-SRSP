@@ -57,7 +57,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // POST /api/login — authentification par session (cookie httpOnly)
+    // POST /api/login — authentification par session et token Sanctum
     public function login(LoginRequest $request)
     {
         if (! Auth::guard('web')->attempt($request->only('email', 'password'))) {
@@ -109,6 +109,7 @@ class AuthController extends Controller
         if ($request->user()) {
             $request->user()->currentAccessToken()?->delete();
         }
+
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

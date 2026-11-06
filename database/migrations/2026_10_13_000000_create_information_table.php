@@ -9,16 +9,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('information', function (Blueprint $table) {
-            $table->id('id_information');
-            $table->string('matricule', 30)->unique();
-            $table->string('nom', 150);
-            $table->string('prenom', 150)->nullable();
-            $table->string('localite', 50);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('information')) {
+            Schema::create('information', function (Blueprint $table) {
+                $table->id('id_information');
+                $table->string('matricule', 30)->unique();
+                $table->string('nom', 150);
+                $table->string('prenom', 150)->nullable();
+                $table->string('localite', 50);
+                $table->timestamps();
+            });
 
-        // Reprise de la liste existante « Agents par localité » (27 agents)
+            // Reprise de la liste existante « Agents par localité » (27 agents)
         $agents = [
             // Localité 304
             ['509688', 'RANDRIANANDRASANA', 'Tsaravita D. C.', '304'],
@@ -62,6 +63,7 @@ return new class extends Migration
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+        }
         }
     }
 

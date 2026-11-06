@@ -8,16 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('reclamation_message_masque', function (Blueprint $table) {
-            $table->increments('id_masque');
-            $table->integer('id_message');
-            $table->integer('id_utilisateur');
+        if (!Schema::hasTable('reclamation_message_masque')) {
+            Schema::create('reclamation_message_masque', function (Blueprint $table) {
+                $table->id('id_masque');
+                $table->foreignId('id_message')->constrained('reclamation_message', 'id_message')->onDelete('cascade');
+                $table->foreignId('id_utilisateur')->constrained('utilisateur', 'id_utilisateur')->onDelete('cascade');
 
-            $table->unique(['id_message', 'id_utilisateur']);
-
-            $table->foreign('id_message')->references('id_message')->on('reclamation_message')->onDelete('cascade');
-            $table->foreign('id_utilisateur')->references('id_utilisateur')->on('utilisateur')->onDelete('cascade');
-        });
+                $table->unique(['id_message', 'id_utilisateur']);
+            });
+        }
     }
 
     public function down(): void

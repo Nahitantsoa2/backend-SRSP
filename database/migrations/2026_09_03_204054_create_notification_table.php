@@ -12,15 +12,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notification', function (Blueprint $table) {
-            $table->id('id_notification');
-            $table->unsignedBigInteger('id_utilisateur');
-            $table->text('message');
-            $table->boolean('lu')->default(false);
-            $table->timestamp('date_envoi')->default(DB::raw('CURRENT_TIMESTAMP'));
-
-            $table->foreign('id_utilisateur')->references('id_utilisateur')->on('utilisateur')->onDelete('cascade');
-        });
+        if (!Schema::hasTable('notification')) {
+            Schema::create('notification', function (Blueprint $table) {
+                $table->id('id_notification');
+                $table->foreignId('id_utilisateur')->constrained('utilisateur', 'id_utilisateur')->onDelete('cascade');
+                $table->text('message');
+                $table->boolean('lu')->default(false);
+                $table->timestamp('date_envoi')->default(DB::raw('CURRENT_TIMESTAMP'));
+            });
+        }
     }
 
     /**

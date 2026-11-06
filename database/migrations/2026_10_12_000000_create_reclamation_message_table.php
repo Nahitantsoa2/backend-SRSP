@@ -9,16 +9,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('reclamation_message', function (Blueprint $table) {
-            $table->increments('id_message');
-            $table->integer('id_reclamation');
-            $table->integer('id_utilisateur');
-            $table->text('contenu');
-            $table->timestamp('date_envoi')->default(DB::raw('CURRENT_TIMESTAMP'));
-
-            $table->foreign('id_reclamation')->references('id_reclamation')->on('reclamation')->onDelete('cascade');
-            $table->foreign('id_utilisateur')->references('id_utilisateur')->on('utilisateur')->onDelete('cascade');
-        });
+        if (!Schema::hasTable('reclamation_message')) {
+            Schema::create('reclamation_message', function (Blueprint $table) {
+                $table->id('id_message');
+                $table->foreignId('id_reclamation')->constrained('reclamation', 'id_reclamation')->onDelete('cascade');
+                $table->foreignId('id_utilisateur')->constrained('utilisateur', 'id_utilisateur')->onDelete('cascade');
+                $table->text('contenu');
+                $table->timestamp('date_envoi')->default(DB::raw('CURRENT_TIMESTAMP'));
+            });
+        }
 
         // Reprise de l'historique existant : description (fonctionnaire) + réponse (administration)
         $admin = DB::selectOne("select id_utilisateur from utilisateur where role = 'administrateur' order by id_utilisateur limit 1");
