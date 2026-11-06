@@ -23,8 +23,12 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('suivi_dossier', function (Blueprint $table) {
-            $table->dropColumn(['localite', 'chap', 'cmv']);
-        });
+        foreach (['localite', 'chap', 'cmv'] as $colonne) {
+            if (Schema::hasColumn('suivi_dossier', $colonne)) {
+                Schema::table('suivi_dossier', function (Blueprint $table) use ($colonne) {
+                    $table->dropColumn($colonne);
+                });
+            }
+        }
     }
 };

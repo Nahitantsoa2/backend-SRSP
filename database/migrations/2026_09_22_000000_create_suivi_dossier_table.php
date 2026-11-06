@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('date_reception')->nullable();
             $table->string('ref_be')->nullable();
             $table->string('ref_dossier')->nullable();
-            $table->string('im')->nullable();
             $table->string('nom_prenom')->nullable();
             $table->string('ministere')->nullable();
             $table->string('motif_instance')->nullable();
